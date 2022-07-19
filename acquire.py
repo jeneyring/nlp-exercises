@@ -8,7 +8,7 @@ from requests import get
 from bs4 import BeautifulSoup
 import os
 
-def get_blog_articles(url):
+def get_codeup_articles(url):
     """this function pulls codeup blog urls and reassigns the tile and content of the blog
     into a dicitionary"""
     url = url
@@ -25,6 +25,44 @@ def get_blog_articles(url):
     output['content'] = soup.find('div', class_='entry-content').text.strip().replace('\n',' ')
     
     return output
+
+def get_blog_articles_data(refresh=False):
+    """This function is from our class tutorial. It goes through
+    all of the acquire exercises for the nlp exercises"""
+
+    if not os.path.isfile('blog_articles.csv') or refresh:
+
+        url = 'https://codeup.com/blog/'
+        headers = {'User-Agent': 'Codeup Data Science student'}
+        response = get(url, headers=headers)
+
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        links = [link['href']for link in soup.select('h2 a[href]')]
+
+        articles = []
+
+        for url in links:
+
+            url_response = get(url, headers=headers)
+            soup = BeautifulSoup(url_response.text, 'html.parser')
+
+            title = soup.find('h1', class_='entry-title').text
+            content = soup.find('div', class_='entry-content').text.strip()
+
+            article_dict = {
+                'title': title,
+                'content': content
+            }
+
+            articles.append(article_dict)
+
+        blog_article_df = pd.DataFrame(articles)
+
+        blog_article_df.to_csv('blog_articles.csv', index=False)
+
+    return pd.read_csv('blog_articles.csv')
+
 
 def parse_news_article(article, category):
     """this function pulls inshorts news articles and reassigns the tile and content of the articles
